@@ -82,7 +82,7 @@ rails db:migrate
 
 ### Configuration
 
-ou can customize Migranize's behavior in the configuration file (`config/migranize.rb`):
+You can customize Migranize's behavior in the configuration file (`config/migranize.rb`):
 
 ```ruby
 Migranize.configure do |config|
