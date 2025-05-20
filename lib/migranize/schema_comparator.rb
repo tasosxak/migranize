@@ -3,6 +3,25 @@ require 'colorize'
 module Migranize
     class SchemaComparator
         class << self
+            # Compares a model's defined fields (`migranize_fields`) with the actual columns in the corresponding database table.
+            #
+            # It identifies:
+            # - Fields that need to be added (`:add_fields`)
+            # - Fields that are no longer defined in the model and should be removed from the DB (`:remove_fields`)
+            # - Fields that exist in both but differ in type (`:change_fields`)
+            #
+            # @param model_class [Class] The ActiveRecord-like model class with `migranize_fields` defined
+            # @return [Hash] A hash with keys:
+            #   - :add_fields [Array<Field>] fields present in model but not in DB
+            #   - :remove_fields [Array<Field>] fields present in DB but not in model
+            #   - :change_fields [Array<Field>] fields with type mismatch
+            #
+            # Example return:
+            #   {
+            #     add_fields: [Field(name: :title, type: :string)],
+            #     remove_fields: [Field(name: :old_column, type: :string)],
+            #     change_fields: [Field(name: :age, type: :integer)]
+            #   }
             def compare_model_with_db(model_class)
                 return {} unless model_class.respond_to?(:migranize_fields)
 
@@ -51,6 +70,29 @@ module Migranize
                 changes
             end
 
+            # Compares all ActiveRecord models that include `migranize_fields` against their corresponding
+            # database tables, collecting differences in structure (fields to add, change, or remove).
+            #
+            # This method skips models or tables based on the configuration (`ignore_namespaces`, `ignore_tables`).
+            # Logs actions and prints changes for each model with discrepancies.
+            #
+            # @return [Hash{Class => Hash}] A hash mapping each model class to its respective changes:
+            #   - :add_fields [Array<Field>]
+            #   - :remove_fields [Array<Field>]
+            #   - :change_fields [Array<Field>]
+            #
+            # Example return:
+            #   {
+            #     User => {
+            #       add_fields: [...],
+            #       remove_fields: [...],
+            #       change_fields: [...]
+            #     },
+            #     Post => {
+            #       ...
+            #     }
+            #   }
+
             def compare_all_models
                 changes_by_model = {}
 
@@ -59,12 +101,12 @@ module Migranize
 
                 all_models.each do |model_class|
                     if ignore_namespaces.any? { |ns| model_class.to_s.start_with?(ns) }
-                      # puts "Skipping model #{model_class.to_s} (ignored namespace)"
+                      Migranize.logger "Skipping model #{model_class.to_s} (ignored namespace)"
                       next
                     end
                 
                     if Migranize.configuration.ignore_tables.include?(model_class.table_name)
-                      # puts "Skipping model #{model_class.to_s} (ignored table: #{model_class.table_name})"
+                       Migranize.logger "Skipping model #{model_class.to_s} (ignored table: #{model_class.table_name})"
                       next
                     end
                 
@@ -73,16 +115,15 @@ module Migranize
                     changes = compare_model_with_db(model_class)
 
                     if changes[:add_fields].any? || changes[:remove_fields].any? || changes[:change_fields].any?
-                      puts "#{model_class.to_s}".bold
-                      puts "  Add fields: #{changes[:add_fields].map(&:name).join(', ').bold}".green if changes[:add_fields].any?
-                      puts "  Change fields: #{changes[:change_fields].map(&:name).join(', ').bold}".yellow if changes[:change_fields].any?
-                      puts "  Remove fields: #{changes[:remove_fields].map(&:name).join(', ').bold}".red if changes[:remove_fields].any?
-      
+                      Migranize.logger "#{model_class.to_s}".bold
+                      Migranize.logger "\tAdd fields: #{changes[:add_fields].map(&:name).join(', ').bold}".green if changes[:add_fields].any?
+                      Migranize.logger "\tChange fields: #{changes[:change_fields].map(&:name).join(', ').bold}".yellow if changes[:change_fields].any?
+                      Migranize.logger "\tRemove fields: #{changes[:remove_fields].map(&:name).join(', ').bold}".red if changes[:remove_fields].any?
                       changes_by_model[model_class] = changes
                     end
                 end
 
-                puts "Found changes for #{changes_by_model.keys.count} models."
+                Migranize.logger "Found changes for #{changes_by_model.keys.count} models."
                 changes_by_model
             end
 
@@ -116,12 +157,12 @@ module Migranize
                   
                   return exists
                 rescue => e
-                  puts "Error checking if table #{table_name} exists: #{e.message}"
-                  puts e.backtrace.first
+                  Migranize.logger.error "Error checking if table #{table_name} exists: #{e.message}"
+                  Migranize.logger.error e.backtrace.first
                   return false
                 end
               else
-                puts "ActiveRecord not defined"
+                Migranize.logger.error "ActiveRecord not defined"
                 return false
               end
             end
