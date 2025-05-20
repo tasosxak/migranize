@@ -100,12 +100,12 @@ module Migranize
 
                 all_models.each do |model_class|
                     if ignore_namespaces.any? { |ns| model_class.to_s.start_with?(ns) }
-                      Migranize.warn "Skipping model #{model_class.to_s} (ignored namespace)"
+                      Migranize.logger.warn "Skipping model #{model_class.to_s} (ignored namespace)"
                       next
                     end
                 
                     if Migranize.configuration.ignore_tables.include?(model_class.table_name)
-                       Migranize.warn "Skipping model #{model_class.to_s} (ignored table: #{model_class.table_name})"
+                       Migranize.logger.warn "Skipping model #{model_class.to_s} (ignored table: #{model_class.table_name})"
                       next
                     end
                 
