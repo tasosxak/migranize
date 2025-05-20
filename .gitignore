@@ -1,4 +1,6 @@
+# Bundler
 /.bundle/
+/vendor/bundle/
 /.yardoc
 /_yardoc/
 /coverage/
@@ -9,3 +11,38 @@
 
 # rspec failure tracking
 .rspec_status
+
+# Development databases
+/db/*.sqlite3
+/db/*.sqlite3-journal
+/db/*.sqlite3-*
+
+# Environment files
+/.env
+/.env.*
+!/.env.example
+
+# Log files
+/log/*
+!/log/.keep
+
+# Temporary files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+*.bak
+*.orig
+
+# Gem builds
+*.gem
+
+# Example app files (if you have an example Rails app in the repo)
+/example/tmp/
+/example/log/
+/example/db/*.sqlite3
+/example/.bundle/
+
+# Generated files from Migranize
+/db/migrate/*_migranize_*.rb

@@ -24,7 +24,7 @@ module Migranize
                 def build_migration_content(changes_by_model, timestamp)
                     content = [ "# Migration generated at #{Time.now}\n" ]
                     content << []
-                    content << "  def change\n"
+                    content << "\tdef change\n"
                     
                     changes_by_model.each do |model_class, changes|
                       table_name = model_class.table_name
@@ -42,7 +42,7 @@ module Migranize
                     #  content << add_indexes_and_foreign_keys(model_class, table_name)
                     # end
             
-                    content << "  end\n"
+                    content << "\tend\n"
                     content << "end\n"
                     content[1] = "class #{migration_file_name.take(4).join("_").camelize} < ActiveRecord::Migration[7.0]\n"
             
