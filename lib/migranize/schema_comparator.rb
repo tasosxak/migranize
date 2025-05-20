@@ -42,8 +42,8 @@ module Migranize
                 end
                 
                 db_columns = get_table_columns(table_name)
-                Migranize.logger.info "table name: #{table_name}\n"
-                Migranize.logger.info "column names: #{db_columns.map(&:name).join(", ")}"
+                Migranize.logger.debug "table name: #{table_name}\n"
+                Migranize.logger.debug "column names: #{db_columns.map(&:name).join(", ")}"
 
                 model_fields.each do |name, field|
                   column_name = name.to_s
@@ -93,6 +93,8 @@ module Migranize
             #     }
             #   }
             def compare_all_models
+                check_for_unaplied_migrations!
+                
                 changes_by_model = {}
 
                 ignore_namespaces = Migranize.configuration.ignore_namespaces
@@ -114,10 +116,10 @@ module Migranize
                     changes = compare_model_with_db(model_class)
 
                     if changes[:add_fields].any? || changes[:remove_fields].any? || changes[:change_fields].any?
-                      Migranize.logger.info "#{model_class.to_s}".bold
-                      Migranize.logger.info "\tAdd fields: #{changes[:add_fields].map(&:name).join(', ').bold}".green if changes[:add_fields].any?
-                      Migranize.logger.info "\tChange fields: #{changes[:change_fields].map(&:name).join(', ').bold}".yellow if changes[:change_fields].any?
-                      Migranize.logger.info "\tRemove fields: #{changes[:remove_fields].map(&:name).join(', ').bold}".red if changes[:remove_fields].any?
+                      puts "#{model_class.to_s}".bold
+                      puts "\sAdd fields: #{changes[:add_fields].map(&:name).join(', ').bold}".green if changes[:add_fields].any?
+                      puts "\sChange fields: #{changes[:change_fields].map(&:name).join(', ').bold}".yellow if changes[:change_fields].any?
+                      puts "\sRemove fields: #{changes[:remove_fields].map(&:name).join(', ').bold}".red if changes[:remove_fields].any?
                       changes_by_model[model_class] = changes
                     end
                 end
@@ -127,6 +129,29 @@ module Migranize
             end
 
             private
+
+            def check_for_unaplied_migrations!
+              un_migrations = unapplied_migrations
+
+              if un_migrations.any?
+                puts "There are unapplied migrations!".bold.red
+                un_migrations.each do |f|
+                  puts f.to_s.red
+                end
+
+                exit(1)
+              end
+            end
+
+            def unapplied_migrations
+              migration_files = Dir.glob(File.join(Migranize.configuration.migrations_dir, "*.rb")).sort
+              applied_migrations = ActiveRecord::Base.connection.execute("SELECT version FROM schema_migrations").map { |row| row["version"] }
+
+              migration_files.filter do |file|
+                version = File.basename(file).split("_").first
+                !applied_migrations.include?(version)
+              end
+            end
 
             def model_has_migranize_fields?(model_class)
                 model_class.respond_to?(:migranize_fields) && 

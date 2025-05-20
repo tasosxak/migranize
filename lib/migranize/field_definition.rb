@@ -5,7 +5,6 @@ module Migranize
     class_methods do
       def field(name, type, options = {})
         name = name.to_sym
-          
         migranize_fields[name] = Migranize::Field.new(name, type, options)
       end
 

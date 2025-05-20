@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-    field :first_name, :text
+    field :first_name, :string
 
     has_one :product
 end
