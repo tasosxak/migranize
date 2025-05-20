@@ -134,7 +134,7 @@ module Migranize
               un_migrations = unapplied_migrations
 
               if un_migrations.any?
-                puts "There are unapplied migrations!".bold.red
+                puts "There are pending migrations!".bold.red
                 un_migrations.each do |f|
                   puts f.to_s.red
                 end
