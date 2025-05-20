@@ -42,8 +42,8 @@ module Migranize
                 end
                 
                 db_columns = get_table_columns(table_name)
-                puts "table name: #{table_name}\n"
-                puts "column names: #{db_columns.map(&:name).join(", ")}"
+                Migranize.logger.info "table name: #{table_name}\n"
+                Migranize.logger.info "column names: #{db_columns.map(&:name).join(", ")}"
 
                 model_fields.each do |name, field|
                   column_name = name.to_s
@@ -92,7 +92,6 @@ module Migranize
             #       ...
             #     }
             #   }
-
             def compare_all_models
                 changes_by_model = {}
 
@@ -101,12 +100,12 @@ module Migranize
 
                 all_models.each do |model_class|
                     if ignore_namespaces.any? { |ns| model_class.to_s.start_with?(ns) }
-                      Migranize.logger "Skipping model #{model_class.to_s} (ignored namespace)"
+                      Migranize.warn "Skipping model #{model_class.to_s} (ignored namespace)"
                       next
                     end
                 
                     if Migranize.configuration.ignore_tables.include?(model_class.table_name)
-                       Migranize.logger "Skipping model #{model_class.to_s} (ignored table: #{model_class.table_name})"
+                       Migranize.warn "Skipping model #{model_class.to_s} (ignored table: #{model_class.table_name})"
                       next
                     end
                 
@@ -115,15 +114,15 @@ module Migranize
                     changes = compare_model_with_db(model_class)
 
                     if changes[:add_fields].any? || changes[:remove_fields].any? || changes[:change_fields].any?
-                      Migranize.logger "#{model_class.to_s}".bold
-                      Migranize.logger "\tAdd fields: #{changes[:add_fields].map(&:name).join(', ').bold}".green if changes[:add_fields].any?
-                      Migranize.logger "\tChange fields: #{changes[:change_fields].map(&:name).join(', ').bold}".yellow if changes[:change_fields].any?
-                      Migranize.logger "\tRemove fields: #{changes[:remove_fields].map(&:name).join(', ').bold}".red if changes[:remove_fields].any?
+                      Migranize.logger.info "#{model_class.to_s}".bold
+                      Migranize.logger.info "\tAdd fields: #{changes[:add_fields].map(&:name).join(', ').bold}".green if changes[:add_fields].any?
+                      Migranize.logger.info "\tChange fields: #{changes[:change_fields].map(&:name).join(', ').bold}".yellow if changes[:change_fields].any?
+                      Migranize.logger.info "\tRemove fields: #{changes[:remove_fields].map(&:name).join(', ').bold}".red if changes[:remove_fields].any?
                       changes_by_model[model_class] = changes
                     end
                 end
 
-                Migranize.logger "Found changes for #{changes_by_model.keys.count} models."
+                Migranize.logger.info "Found changes for #{changes_by_model.keys.count} models."
                 changes_by_model
             end
 
